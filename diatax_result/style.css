@@ -1,0 +1,150 @@
+/* STYLE FILE: Modify variables in :root to change colors, typography and measurements directly. */
+:root {
+  --ink: #111111; /* Black for text */
+  --paper: #ffffff; /* White for background */
+  --accent: #d4af37; /* Elegant gold for accents, titles and links */
+  --rule: #e5e5e5; /* Very light gray for dividers */
+  --terminal-bg: #0f1419; /* Modern console background */
+  --terminal-bar: #1e242e; /* Top console bar */
+  --measure: 65ch;
+  --serif: ui-serif, Georgia, serif;
+  --sans: ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, var(--measure)) 14rem;
+  gap: 3rem;
+  justify-content: center;
+  padding: 0 2rem;
+  min-height: 100vh;
+}
+
+/* --- HIDDEN PAGES LOGIC (ZERO JS) --- */
+.page { display: none; animation: fadeIn 0.4s ease; }
+
+/* Show #start by default if no target */
+#start { display: block; }
+
+/* If target exists, hide #start (unless it's the target) */
+body:has(.page:target):not(:has(#start:target)) #start { display: none; }
+
+/* Show current target page */
+.page:target { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- LEFT SIDEBAR (Global Nav) --- */
+.sidebar-left { padding-top: 4rem; }
+.global-nav { position: sticky; top: 4rem; }
+.brand { font-weight: 900; letter-spacing: 0.15em; margin-bottom: 3rem; color: var(--accent); font-size: 0.75rem; border-left: 2px solid var(--accent); padding-left: 1rem; }
+
+.global-nav ul { list-style: none; padding: 0; margin: 0; }
+.global-nav li { margin-bottom: 0.5rem; }
+.global-nav a {
+  text-decoration: none;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: block;
+  padding: 0.4rem 0;
+}
+.global-nav a:hover { color: var(--accent); padding-left: 0.5rem; }
+
+/* --- MAIN CONTENT --- */
+.content { padding: 4rem 0; }
+h1, h2, h3 { font-family: var(--serif); color: var(--ink); line-height: 1.2; margin-top: 3rem; }
+h1 { font-size: clamp(2.5rem, 5vw, 3.5rem); margin-top: 0; margin-bottom: 2rem; border-bottom: 2px solid var(--rule); padding-bottom: 1rem; }
+h2 { font-size: 1.8rem; color: var(--accent); border-bottom: 1px solid var(--rule); padding-bottom: 0.5rem; }
+h3 { font-size: 1.3rem; }
+
+.badge { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 1rem; text-transform: uppercase; }
+.lead { font-size: 1.2rem; color: #444; font-style: italic; margin-bottom: 3rem; }
+.metadata { display: flex; gap: 2rem; margin-bottom: 2.5rem; font-size: 0.85rem; color: #888; border-bottom: 1px solid var(--rule); padding-bottom: 1.5rem; }
+
+/* --- RIGHT SIDEBAR (Local TOC) --- */
+.sidebar-right { padding-top: 4rem; }
+.local-nav { position: sticky; top: 4rem; border-left: 1px solid var(--rule); padding-left: 1.5rem; }
+.toc-title { font-size: 0.65rem; font-weight: 900; color: #aaa; letter-spacing: 0.1em; margin-bottom: 1.5rem; text-transform: uppercase; }
+
+.toc-group { display: none; }
+.toc-group ul { list-style: none; padding: 0; margin: 0; }
+.toc-group li { margin-bottom: 0.75rem; }
+.toc-group a { text-decoration: none; color: #777; font-size: 0.8rem; transition: color 0.2s; display: block; }
+.toc-group a:hover { color: var(--accent); }
+
+/* Dynamic local TOC highlight */
+body:has(#start:target) #toc-start, 
+body:not(:has(.page:target)) #toc-start { display: block; }
+
+body:has(#reference:target) #toc-reference { display: block; }
+body:has(#howto:target) #toc-howto { display: block; }
+body:has(#tutorial:target) #toc-tutorial { display: block; }
+body:has(#explanation:target) #toc-explanation { display: block; }
+
+/* --- CODE BLOCKS (REALISTIC TERMINAL) --- */
+pre {
+    background-color: var(--terminal-bg);
+    color: #d1d1d1;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 2rem 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    position: relative;
+    border: 1px solid #2d333b;
+}
+
+pre::before {
+    content: "● ● ●";
+    display: block;
+    height: 24px;
+    background: var(--terminal-bar);
+    margin: -1.5rem -1.5rem 1rem -1.5rem;
+    padding: 0 1rem;
+    color: #ff5f56;
+    font-size: 10px;
+    line-height: 24px;
+    letter-spacing: 2px;
+    text-shadow: 14px 0 #ffbd2e, 28px 0 #27c93f;
+    font-family: sans-serif;
+}
+
+code { font-family: var(--mono); background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.9em; color: #c51d1d; }
+pre code { background: transparent; padding: 0; color: inherit; }
+
+/* --- TABLES AND OTHERS --- */
+table { width: 100%; border-collapse: collapse; margin: 2.5rem 0; font-size: 0.9rem; }
+th, td { text-align: left; padding: 1rem; border-bottom: 1px solid var(--rule); }
+th { color: var(--accent); font-family: var(--serif); font-weight: 700; }
+
+/* --- FOOTER --- */
+footer { margin-top: 10rem; padding-top: 2rem; border-top: 1px solid var(--rule); text-align: center; font-size: 0.75rem; color: #bbb; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; padding: 0 2rem; }
+  .sidebar-left, .sidebar-right { display: none; }
+  .page { display: block !important; margin-bottom: 6rem; }
+}
