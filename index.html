@@ -1,0 +1,264 @@
+<!-- This is the structural file. Appearance is controlled from style.css -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Documentation - Premium</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Column 1: Global Navigation -->
+        <aside class="sidebar-left">
+            <nav class="global-nav">
+                <div class="brand">DIATAX</div>
+                <ul>
+                    <li><a href="#start" class="nav-link">Introduction</a></li><li><a href="#reference" class="nav-link">Reference</a></li><li><a href="#howto" class="nav-link">Howto</a></li><li><a href="#tutorial" class="nav-link">Tutorial</a></li><li><a href="#explanation" class="nav-link">Explanation</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Column 2: Main Content -->
+        <main class="content">
+            <article id="start" class="page">
+            <header>
+                <p class="badge">PROJECT</p>
+                <h1>Introduction</h1>
+                <div class="metadata">
+                    <span><strong>Version:</strong> 1.2.0</span>
+                    <span><strong>Author:</strong> DaveCuc</span>
+                </div>
+                <p class="lead">Diatax is a multi-agent CLI tool designed to automate the generation of technical documentation based on the Diátaxis framework. It orchestrates specialized agents (Researcher, Writers, Judges, Risk/Security Auditor, and SiteWriter) to analyze project source code, generate structured documentation (Tutorials, How-tos, Explanations, References), and assemble a static, minimalist web dashboard. It features a secure configuration system using system-level keyrings and supports incremental updates via file hashing.</p>
+            </header>
+        </article>
+        
+                <article id="reference" class="page">
+                    <p class="badge">REFERENCE</p>
+                    <div class="markdown-body">
+                        <h1>Referencia Técnica: Diatax</h1>
+<h2 id="reference-descripci-n-general">Descripción General</h2>
+<p>Diatax es una herramienta de línea de comandos (CLI) diseñada para la generación automatizada de documentación técnica basada en el marco de trabajo <strong>Diátaxis</strong>. El sistema orquesta agentes especializados para analizar código fuente, generar contenido estructurado y ensamblar un tablero web estático.</p>
+<h2 id="reference-arquitectura-del-sistema">Arquitectura del Sistema</h2>
+<p>El sistema opera mediante un flujo de trabajo síncrono que integra los siguientes componentes:</p>
+<h3 id="reference-1--capa-de-configuraci-n-y-seguridad">1. Capa de Configuración y Seguridad</h3>
+<ul>
+<li><strong><code>diatax.config</code></strong>: Gestiona la persistencia de la configuración.<ul>
+<li><strong>Almacenamiento</strong>: Utiliza <code>keyring</code> para credenciales (API Keys) y un archivo JSON (<code>~/.diatax_config.json</code>) para preferencias de usuario.</li>
+<li><strong>Política Fail-Secure</strong>: Si el acceso al almacén de claves falla, el sistema interrumpe la ejecución para evitar la exposición de credenciales en texto plano.</li>
+</ul>
+</li>
+</ul>
+<h3 id="reference-2--agentes--agentes-especializados">2. Agentes (Agentes Especializados)</h3>
+<ul>
+<li><strong><code>Researcher</code></strong>: Analiza la estructura del proyecto y el contexto (código fuente o grafos de dependencias) para generar metadatos técnicos.</li>
+<li><strong><code>Writers</code> (Tutorial, HowTo, Explanation, Reference)</strong>: Generan contenido en formato Markdown siguiendo las directrices específicas de Diátaxis.</li>
+<li><strong><code>Judges</code></strong>: Evalúan la calidad del contenido generado por los escritores, validando el cumplimiento de los criterios técnicos y estilísticos.</li>
+<li><strong><code>RiskAgent</code></strong>: Realiza auditorías SAST (Static Application Security Testing) sobre el código fuente.</li>
+<li><strong><code>SiteWriter</code></strong>: Genera el tablero web estático (<code>index.html</code> y <code>style.css</code>) a partir de los resultados de los escritores.</li>
+</ul>
+<h3 id="reference-3--servicios">3. Servicios</h3>
+<ul>
+<li><strong><code>LLMService</code></strong>: Abstracción sobre <code>LiteLLM</code> para la comunicación con proveedores de IA.<ul>
+<li><strong>Parámetros de solicitud</strong>: <code>temperature=0.2</code>, <code>max_tokens=4000</code>.</li>
+<li><strong>Manejo de errores</strong>: Implementa recuperación mediante expresiones regulares ante respuestas JSON malformadas.</li>
+</ul>
+</li>
+<li><strong><code>FileService</code></strong>: Gestiona la lectura de archivos, el cálculo de hashes (SHA-256) para actualizaciones incrementales y la copia de activos multimedia.</li>
+</ul>
+<h2 id="reference-estructura-de-datos--workflowstate">Estructura de Datos (WorkflowState)</h2>
+<p>El estado del sistema se mantiene en un objeto <code>WorkflowState</code> compartido entre agentes:
+*   <code>raw_code</code>: Contenido del código fuente analizado.
+*   <code>graphify_context</code>: Datos de dependencias (si están presentes).
+*   <code>diataxis_results</code>: Diccionario que contiene el contenido generado para cada tipo de documento.
+*   <code>technical_analysis</code>: Metadatos y resumen técnico del proyecto.
+*   <code>writing_attempts</code>: Contador de intentos de escritura (límite: 3).</p>
+<h2 id="reference-comandos-de-la-cli">Comandos de la CLI</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Comando</th>
+<th style="text-align: left;">Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>generar [path]</code></td>
+<td style="text-align: left;">Inicia el flujo de generación maestra de documentación.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>update [path]</code></td>
+<td style="text-align: left;">Ejecuta una actualización incremental basada en hashes de archivos.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>audit [path]</code></td>
+<td style="text-align: left;">Realiza un escaneo de seguridad (SAST) sobre los archivos del proyecto.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>config</code></td>
+<td style="text-align: left;">Configura el proveedor de IA, el modelo y el idioma de salida.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reference-limitaciones-t-cnicas">Limitaciones Técnicas</h2>
+<ol>
+<li><strong>Contexto</strong>: El sistema depende de la ventana de contexto del modelo seleccionado; proyectos masivos sin un archivo de contexto de grafos (<code>graphify_result.json</code>) pueden exceder los límites de tokens.</li>
+<li><strong>Generación de UI</strong>: El <code>SiteWriter</code> utiliza generación basada en expresiones regulares para HTML/CSS; la complejidad del diseño está limitada a la estructura predefinida.</li>
+<li><strong>Auditoría</strong>: El <code>RiskAgent</code> se basa en análisis de LLM, lo cual puede generar falsos positivos en comparación con herramientas SAST dedicadas (ej. Bandit, Semgrep).</li>
+<li><strong>Actualizaciones</strong>: La lógica de regeneración parcial no está implementada; el sistema realiza una actualización holística al detectar cambios en cualquier archivo.</li>
+</ol>
+                    </div>
+                </article>
+                
+                <article id="howto" class="page">
+                    <p class="badge">HOWTO</p>
+                    <div class="markdown-body">
+                        <h1>Guía de Uso: Generación de Documentación con Diatax</h1>
+<p>Esta guía detalla los pasos necesarios para automatizar la creación de documentación técnica siguiendo el marco de trabajo Diátaxis utilizando Diatax.</p>
+<h2 id="howto-1--generaci-n-de-documentaci-n-maestra">1. Generación de Documentación Maestra</h2>
+<p>Para generar el conjunto completo de documentación (Referencia, How-to, Tutorial y Explicación) de un proyecto:</p>
+<ol>
+<li>Navegue a la carpeta raíz de su proyecto en la terminal.</li>
+<li>Ejecute el comando de generación:
+    <code>bash
+    python -m diatax.main generar .</code></li>
+<li>Si el modo interactivo está activo, revise la previsualización de cada documento en la terminal.</li>
+<li>Seleccione una acción para cada borrador:<ul>
+<li><strong>A (Aprobar):</strong> Finaliza el documento y continúa con el siguiente.</li>
+<li><strong>R (Rechazar):</strong> Ingrese retroalimentación específica para que el agente reescriba el contenido.</li>
+<li><strong>I (Ignorar):</strong> Salta el documento actual.</li>
+</ul>
+</li>
+</ol>
+<h2 id="howto-2--ejecuci-n-en-modo-autom-tico">2. Ejecución en Modo Automático</h2>
+<p>Para generar la documentación sin interrupciones manuales (ideal para entornos CI/CD):</p>
+<ol>
+<li>Ejecute el comando incluyendo la bandera <code>--auto</code>:
+    <code>bash
+    python -m diatax.main generar . --auto</code></li>
+<li>El sistema procesará todos los tipos de documentos de forma secuencial hasta completar el dashboard.</li>
+</ol>
+<h2 id="howto-3--actualizaci-n-incremental">3. Actualización Incremental</h2>
+<p>Para actualizar únicamente los archivos que han sufrido cambios desde la última ejecución:</p>
+<ol>
+<li>Ejecute el comando de actualización:
+    <code>bash
+    python -m diatax.main update .</code></li>
+<li>El sistema comparará los hashes actuales de los archivos con el registro en <code>.diatax_cache.json</code>.</li>
+<li>Si se detectan cambios, Diatax regenerará solo las secciones afectadas para optimizar el consumo de tokens.</li>
+</ol>
+<h2 id="howto-4--auditor-a-de-seguridad--sast">4. Auditoría de Seguridad (SAST)</h2>
+<p>Para realizar un escaneo de vulnerabilidades en su código fuente:</p>
+<ol>
+<li>Ejecute el agente de riesgos:
+    <code>bash
+    python -m diatax.main audit .</code></li>
+<li>Revise la tabla de resultados generada en la terminal, la cual clasifica los hallazgos por gravedad, ubicación, descripción y solución sugerida.</li>
+</ol>
+<h2 id="howto-5--integraci-n-de-contexto-externo">5. Integración de Contexto Externo</h2>
+<p>Si su proyecto es de gran escala, proporcione un mapa de dependencias para mejorar la precisión del análisis:</p>
+<ol>
+<li>Genere un archivo <code>graphify_result.json</code> en la raíz de su proyecto utilizando la herramienta <a href="https://github.com/safishamsi/graphify">Graphify</a>.</li>
+<li>Ejecute cualquier comando de <code>generar</code> o <code>update</code>.</li>
+<li>Diatax detectará automáticamente el archivo y lo utilizará como fuente primaria de contexto técnico en lugar del análisis de código plano.</li>
+</ol>
+                    </div>
+                </article>
+                
+                <article id="tutorial" class="page">
+                    <p class="badge">TUTORIAL</p>
+                    <div class="markdown-body">
+                        <h1>Tutorial: Generación de Documentación con Diatax</h1>
+<p>Este tutorial te guiará a través de la creación de tu primera documentación técnica utilizando <strong>Diatax</strong>. Al finalizar, tendrás un sitio web estático, elegante y profesional que documenta tu código fuente automáticamente.</p>
+<hr />
+<h3 id="tutorial-paso-1--preparaci-n-del-entorno">Paso 1: Preparación del entorno</h3>
+<p>Asegúrate de estar en la carpeta raíz de tu proyecto. Diatax detectará automáticamente tus archivos <code>.py</code> y cualquier archivo <code>README.md</code> existente para contextualizar la documentación.</p>
+<p><strong>Acción:</strong> Ejecuta el siguiente comando en tu terminal:</p>
+<pre><code class="language-bash">python -m diatax.main generar .
+</code></pre>
+<p><strong>Qué esperar:</strong> Verás una barra de progreso en la terminal mientras los agentes (Researcher, Writers, Judges) analizan tu código. El sistema te mostrará una previsualización del contenido generado para cada sección (Tutorial, How-to, etc.).</p>
+<hr />
+<h3 id="tutorial-paso-2--interacci-n-con-los-agentes--hitl">Paso 2: Interacción con los Agentes (HITL)</h3>
+<p>Diatax utiliza un sistema de "Human-in-the-Loop" (HITL). Cuando un agente termine de redactar una sección, verás una previsualización en pantalla.</p>
+<p><strong>Acción:</strong> Ante la pregunta <code>¿Acción?</code>, elige una de las siguientes opciones:
+*   <strong>A (Aprobar):</strong> Acepta el contenido y pasa a la siguiente sección.
+*   <strong>R (Rechazar/Corregir):</strong> Te permitirá escribir un comentario para que el agente mejore el texto.
+*   <strong>I (Ignorar):</strong> Continúa con el proceso sin realizar cambios.</p>
+<p><strong>Qué esperar:</strong> Si eliges <strong>A</strong>, el sistema continuará automáticamente con la siguiente categoría de la metodología Diátaxis.</p>
+<hr />
+<h3 id="tutorial-paso-3--visualizaci-n-del-dashboard">Paso 3: Visualización del Dashboard</h3>
+<p>Una vez que el proceso finalice, Diatax ensamblará todos los archivos en un sitio web estático.</p>
+<p><strong>Acción:</strong> Navega a la carpeta recién creada en tu proyecto:</p>
+<pre><code class="language-bash">cd diatax_result
+</code></pre>
+<p><strong>Qué esperar:</strong> Encontrarás los archivos <code>index.html</code> y <code>style.css</code>. Abre <code>index.html</code> en tu navegador web favorito. Verás un dashboard minimalista con navegación lateral, índice de contenidos y una tipografía optimizada para lectura técnica.</p>
+<hr />
+<h3 id="tutorial-paso-4--actualizaci-n-incremental">Paso 4: Actualización Incremental</h3>
+<p>A medida que tu código evoluciona, no es necesario regenerar toda la documentación desde cero.</p>
+<p><strong>Acción:</strong> Realiza cambios en tus archivos fuente y ejecuta:</p>
+<pre><code class="language-bash">python -m diatax.main update .
+</code></pre>
+<p><strong>Qué esperar:</strong> Diatax comparará los hashes de tus archivos actuales con el caché previo (<code>.diatax_cache.json</code>). Solo se procesarán los archivos que hayan sido modificados, ahorrando tiempo y tokens de API.</p>
+<hr />
+<h3 id="tutorial-resumen-de-resultados">Resumen de resultados</h3>
+<p>Tras completar este tutorial, tu proyecto ahora cuenta con:
+1.  <strong>Documentación Diátaxis:</strong> Archivos <code>.md</code> individuales para Referencia, How-to, Tutorial y Explicación.
+2.  <strong>Dashboard Web:</strong> Un sitio <code>index.html</code> profesional en la carpeta <code>diatax_result/</code>.
+3.  <strong>Integración:</strong> Un enlace automático a tu documentación insertado en tu <code>README.md</code> principal.</p>
+<p>¡Tu proyecto ahora es mucho más accesible para otros desarrolladores!</p>
+                    </div>
+                </article>
+                
+                <article id="explanation" class="page">
+                    <p class="badge">EXPLANATION</p>
+                    <div class="markdown-body">
+                        <h1>Explicación: El Ecosistema Diatax</h1>
+<p>Esta guía proporciona una visión profunda sobre el diseño, la arquitectura y la filosofía detrás de <strong>Diatax</strong>. Entender el "porqué" de este sistema es fundamental para aprovechar al máximo su capacidad de automatización técnica.</p>
+<h2 id="explanation-la-filosof-a--di-taxis-como-n-cleo">La Filosofía: Diátaxis como Núcleo</h2>
+<p>El marco de trabajo <strong>Diátaxis</strong> no es solo una convención de nombres; es una respuesta a la crisis de la documentación técnica moderna. La mayoría de los proyectos sufren de "documentación monolítica", donde tutoriales, referencias y conceptos se mezclan, confundiendo al usuario.</p>
+<p>Diatax implementa este marco mediante una orquestación de agentes especializados. Al separar las preocupaciones en cuatro tipos de documentos, garantizamos que el usuario encuentre exactamente lo que necesita:
+*   <strong>Tutoriales:</strong> Para aprender haciendo.
+*   <strong>How-tos:</strong> Para resolver problemas específicos.
+*   <strong>Referencias:</strong> Para consultar hechos técnicos.
+*   <strong>Explicaciones:</strong> Para comprender el contexto y el diseño.</p>
+<h2 id="explanation-arquitectura-multi-agente">Arquitectura Multi-Agente</h2>
+<p>Diatax no es un simple script de LLM; es un sistema de <strong>orquestación de agentes</strong>. Cada agente tiene un rol definido y un conjunto de criterios de evaluación (Jueces) que aseguran la calidad:</p>
+<ol>
+<li><strong>Researcher (El Arquitecto):</strong> Su función es realizar una "lectura global". A diferencia de un LLM que solo ve un archivo, el Researcher analiza la estructura completa del proyecto, identificando dependencias y brechas lógicas.</li>
+<li><strong>Writers (Los Especialistas):</strong> Cada escritor está configurado con un <em>system prompt</em> específico que restringe su estilo y enfoque según el tipo de documento Diátaxis.</li>
+<li><strong>Judges (El Control de Calidad):</strong> Actúan como un filtro de seguridad. Si un documento no cumple con los principios de su categoría (por ejemplo, si un "How-to" incluye demasiada teoría), el Juez lo rechaza y solicita correcciones, cerrando el ciclo de retroalimentación.</li>
+<li><strong>SiteWriter (El Arquitecto de Interfaz):</strong> Este agente es responsable de la experiencia de usuario final. Su diseño "Zero-JS" (basado en selectores CSS <code>:has</code> y <code>:target</code>) garantiza que la documentación sea rápida, ligera y extremadamente portable.</li>
+</ol>
+<h2 id="explanation-decisiones-de-dise-o-y-restricciones-t-cnicas">Decisiones de Diseño y Restricciones Técnicas</h2>
+<h3 id="explanation-1--seguridad--fail-secure">1. Seguridad "Fail-Secure"</h3>
+<p>La integración con el sistema de <em>keyring</em> del sistema operativo (macOS Keychain, Windows Credential Locker) es una decisión de diseño crítica. Al evitar el almacenamiento de claves API en archivos de texto plano, Diatax protege al usuario contra la exposición accidental de credenciales en repositorios Git.</p>
+<h3 id="explanation-2--contexto-agregado-vs--graphify">2. Contexto Agregado vs. Graphify</h3>
+<p>El sistema maneja dos niveles de entrada:
+*   <strong>Raw Code:</strong> Una concatenación inteligente de archivos fuente. Es ideal para proyectos pequeños y medianos.
+*   <strong>Graphify Context:</strong> Para proyectos de gran escala, Diatax permite la inyección de grafos de dependencias. Esto es vital porque los LLMs tienen límites de ventana de contexto (<em>context window</em>); un grafo permite al agente entender la arquitectura sin necesidad de procesar cada línea de código individualmente.</p>
+<h3 id="explanation-3--resiliencia-ante-el-llm">3. Resiliencia ante el LLM</h3>
+<p>El sistema asume que los LLMs pueden fallar o devolver formatos inesperados. Por ello, implementa:
+*   <strong>JSON Resilience:</strong> Uso de expresiones regulares (regex) para extraer estructuras de datos incluso cuando el modelo añade texto conversacional innecesario.
+*   <strong>Circuit Breaker:</strong> Lógica de reintentos y manejo de errores que garantiza que, si un agente falla, el sistema no se detenga catastróficamente, sino que reporte el error de forma clara.</p>
+<h2 id="explanation-conexiones-y-perspectivas">Conexiones y Perspectivas</h2>
+<p>Diatax se sitúa en la intersección entre la <strong>Ingeniería de Software</strong> y la <strong>Comunicación Técnica</strong>. Mientras que herramientas como Docusaurus o MkDocs se enfocan en la <em>presentación</em>, Diatax se enfoca en la <em>generación y mantenimiento</em>.</p>
+<p>La capacidad de realizar <strong>actualizaciones incrementales</strong> mediante hashing SHA-256 es lo que permite que Diatax sea una herramienta de desarrollo continuo y no solo un generador de "una sola vez". Al detectar cambios solo en los archivos modificados, el sistema optimiza el consumo de tokens y reduce drásticamente el tiempo de espera.</p>
+<h2 id="explanation-reflexi-n-final">Reflexión Final</h2>
+<p>La documentación técnica es un activo vivo. Al automatizar la creación de referencias y guías, Diatax permite que los desarrolladores se concentren en escribir código, mientras el sistema asegura que la "historia" del proyecto se mantenga coherente, precisa y, sobre todo, útil para el usuario final. La elegancia de su dashboard minimalista es un recordatorio de que, en la documentación, menos es a menudo más.</p>
+                    </div>
+                </article>
+                
+            <footer>
+                <p>Documentation generated by Diatax</p>
+            </footer>
+        </main>
+
+        <!-- Column 3: Local Index (Right) -->
+        <aside class="sidebar-right">
+            <nav class="local-nav">
+                <div class="toc-group" id="toc-start"><p class="toc-title">ON THIS PAGE</p><ul><li><a href="#start">Top</a></li></ul></div><div class="toc-group" id="toc-reference"><p class="toc-title">ON THIS PAGE</p><ul><li style=""><a href="#reference-descripci-n-general">Descripción General</a></li><li style=""><a href="#reference-arquitectura-del-sistema">Arquitectura del Sistema</a></li><li style="margin-left: 1rem;"><a href="#reference-1--capa-de-configuraci-n-y-seguridad">1. Capa de Configuración y Seguridad</a></li><li style="margin-left: 1rem;"><a href="#reference-2--agentes--agentes-especializados">2. Agentes (Agentes Especializados)</a></li><li style="margin-left: 1rem;"><a href="#reference-3--servicios">3. Servicios</a></li><li style=""><a href="#reference-estructura-de-datos--workflowstate">Estructura de Datos (WorkflowState)</a></li><li style=""><a href="#reference-comandos-de-la-cli">Comandos de la CLI</a></li><li style=""><a href="#reference-limitaciones-t-cnicas">Limitaciones Técnicas</a></li></ul></div><div class="toc-group" id="toc-howto"><p class="toc-title">ON THIS PAGE</p><ul><li style=""><a href="#howto-1--generaci-n-de-documentaci-n-maestra">1. Generación de Documentación Maestra</a></li><li style=""><a href="#howto-2--ejecuci-n-en-modo-autom-tico">2. Ejecución en Modo Automático</a></li><li style=""><a href="#howto-3--actualizaci-n-incremental">3. Actualización Incremental</a></li><li style=""><a href="#howto-4--auditor-a-de-seguridad--sast">4. Auditoría de Seguridad (SAST)</a></li><li style=""><a href="#howto-5--integraci-n-de-contexto-externo">5. Integración de Contexto Externo</a></li></ul></div><div class="toc-group" id="toc-tutorial"><p class="toc-title">ON THIS PAGE</p><ul><li style="margin-left: 1rem;"><a href="#tutorial-paso-1--preparaci-n-del-entorno">Paso 1: Preparación del entorno</a></li><li style="margin-left: 1rem;"><a href="#tutorial-paso-2--interacci-n-con-los-agentes--hitl">Paso 2: Interacción con los Agentes (HITL)</a></li><li style="margin-left: 1rem;"><a href="#tutorial-paso-3--visualizaci-n-del-dashboard">Paso 3: Visualización del Dashboard</a></li><li style="margin-left: 1rem;"><a href="#tutorial-paso-4--actualizaci-n-incremental">Paso 4: Actualización Incremental</a></li><li style="margin-left: 1rem;"><a href="#tutorial-resumen-de-resultados">Resumen de resultados</a></li></ul></div><div class="toc-group" id="toc-explanation"><p class="toc-title">ON THIS PAGE</p><ul><li style=""><a href="#explanation-la-filosof-a--di-taxis-como-n-cleo">La Filosofía: Diátaxis como Núcleo</a></li><li style=""><a href="#explanation-arquitectura-multi-agente">Arquitectura Multi-Agente</a></li><li style=""><a href="#explanation-decisiones-de-dise-o-y-restricciones-t-cnicas">Decisiones de Diseño y Restricciones Técnicas</a></li><li style="margin-left: 1rem;"><a href="#explanation-1--seguridad--fail-secure">1. Seguridad "Fail-Secure"</a></li><li style="margin-left: 1rem;"><a href="#explanation-2--contexto-agregado-vs--graphify">2. Contexto Agregado vs. Graphify</a></li><li style="margin-left: 1rem;"><a href="#explanation-3--resiliencia-ante-el-llm">3. Resiliencia ante el LLM</a></li><li style=""><a href="#explanation-conexiones-y-perspectivas">Conexiones y Perspectivas</a></li><li style=""><a href="#explanation-reflexi-n-final">Reflexión Final</a></li></ul></div>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>
