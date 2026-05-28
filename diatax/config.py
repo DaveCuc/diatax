@@ -7,65 +7,69 @@ from rich.console import Console
 
 console = Console()
 
-# Ruta donde se guardará la configuración (~/.diatax_config.json)
+# Path where the configuration will be saved (~/.diatax_config.json)
 CONFIG_FILE = Path.home() / ".diatax_config.json"
-SERVICE_NAME = "diatax-cli"
+SERVICE_NAME = "diatax"
 
-def guardar_configuracion(proveedor: str, modelo: str, api_key: str):
+def save_config(provider: str, model: str, api_key: str, output_language: str = "english"):
     """
-    Guarda la configuración general en JSON y la API Key en el Keyring del sistema.
-    Implementa política Fail-Secure: si la bóveda falla, no guarda nada.
+    Saves general configuration in JSON and API Key in system Keyring.
+    Implements Fail-Secure policy: if the vault fails, nothing is saved.
     """
     config_data = {
-        "proveedor": proveedor,
-        "modelo": modelo
+        "provider": provider,
+        "model": model,
+        "output_language": output_language
     }
 
-    # 1. Guardar API Key en la bóveda del sistema (FAIL-SECURE)
+    # 1. Save API Key in system vault (FAIL-SECURE)
     try:
         keyring.set_password(SERVICE_NAME, "api_key", api_key)
     except Exception as e:
-        console.print(f"[bold red]❌ Error crítico de seguridad: El llavero del sistema no está disponible. "
-                      f"Por tu protección, la API Key no se guardará en texto plano.[/bold red]")
+        console.print(f"[bold red]❌ Critical security error: System keyring is not available. "
+                      f"For your protection, the API Key will not be saved in plain text.[/bold red]")
         sys.exit(1)
 
-    # 2. Guardar el resto en el archivo JSON
+    # 2. Save the rest in the JSON file
     try:
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config_data, f, indent=4)
     except (PermissionError, OSError) as e:
-        console.print(f"[bold red]❌ Error de sistema: No se pudo escribir el archivo de configuración. "
-                      f"Detalle: {str(e)}[/bold red]")
+        console.print(f"[bold red]❌ System error: Could not write configuration file. "
+                      f"Detail: {str(e)}[/bold red]")
         sys.exit(1)
 
-def cargar_configuracion():
+def load_config():
     """
-    Lee la configuración general y recupera la API Key del Keyring.
-    Diferencia entre estados normales y fallos de sistema críticos.
+    Reads general configuration and retrieves API Key from Keyring.
+    Distinguishes between normal states and critical system failures.
     """
     try:
         if not CONFIG_FILE.exists():
             return {}
 
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-            config = json.load(f)
+            config_data = json.load(f)
 
-        # Recuperar la API Key desde el Keyring
+        # Retrieve the key from the vault
         api_key = keyring.get_password(SERVICE_NAME, "api_key")
+        
         if api_key:
-            config["api_key"] = api_key
+            config_data["api_key"] = api_key
+            
+            # Export to environment for LiteLLM
+            provider = config_data.get("provider", "").lower()
+            if "gemini" in provider:
+                os.environ["GEMINI_API_KEY"] = api_key
+            elif "openai" in provider:
+                os.environ["OPENAI_API_KEY"] = api_key
+            elif "groq" in provider:
+                os.environ["GROQ_API_KEY"] = api_key
+            elif "anthropic" in provider:
+                os.environ["ANTHROPIC_API_KEY"] = api_key
 
-        return config
+        return config_data
 
-    except json.JSONDecodeError:
-        console.print("[bold yellow]⚠️ Archivo de configuración corrupto detectado. "
-                      "Se ignorará para evitar errores.[/bold yellow]")
-        return {}
-    except (PermissionError, OSError) as e:
-        console.print(f"[bold red]❌ Error de sistema: No se puede acceder a la configuración "
-                      f"(bloqueo de disco o permisos). Deteniendo para no sobrescribir datos. "
-                      f"Detalle: {str(e)}[/bold red]")
-        sys.exit(1)
     except Exception as e:
-        console.print(f"[bold red]⚠️ Error inesperado al leer la configuración: {str(e)}[/bold red]")
-        return None
+        console.print(f"[bold red]⚠ Error loading configuration: {str(e)}[/bold red]")
+        return {}

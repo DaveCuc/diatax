@@ -121,9 +121,13 @@ ENV/
 env.bak/
 venv.bak/
 
-# Project Specific
+# Diatax Project Specific
+.diatax_cache.json
+diatax_result/
+.documentador_cache.json
 .documentador_config.json
 documentator_result/
+graphify_result.json
 graph.json
 
 # Logs and temporary files

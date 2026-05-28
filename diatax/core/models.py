@@ -3,8 +3,8 @@ from typing import Any, Union, Dict, Optional
 
 class AgentResponse(BaseModel):
     """
-    Modelo genérico para todas las respuestas de los agentes.
-    Asegura consistencia en la comunicación entre capas.
+    Generic model for all agent responses.
+    Ensures consistency in communication between layers.
     """
     status: str  # e.g., "success", "error", "pending"
     data: Union[Dict[str, Any], str]
@@ -12,21 +12,23 @@ class AgentResponse(BaseModel):
 
 class WorkflowState(BaseModel):
     """
-    La 'Pizarra' (Shared State) del sistema.
-    Nota: Su estabilidad depende de la entrega de datos estructurados por parte de los agentes.
+    The 'Blackboard' (Shared State) of the system.
+    Note: Its stability depends on agents delivering structured data.
     """
-    codigo_crudo: Optional[str] = None
-    contexto_graphify: Optional[Dict[str, Any]] = None
-    analisis_tecnico: Optional[Dict[str, Any]] = None
-    borrador_markdown: Optional[str] = None
-    contexto_readme: str = ""
-    ruta_referencia: str = "."
-    mapa_dependencias: Optional[Dict[str, Any]] = None
-    resultados_diataxis: Dict[str, str] = Field(default_factory=dict)
-    feedback_juez: Optional[str] = None
-    contexto_usuario: Optional[str] = None
-    documento_web: Optional[str] = None
-    documento_web_html: Optional[str] = None
-    documento_web_css: Optional[str] = None
-    intentos_escritura: int = 0
-    documento_final_aprobado: bool = False
+    raw_code: Optional[str] = None
+    graphify_context: Optional[Dict[str, Any]] = None
+    technical_analysis: Optional[Dict[str, Any]] = None
+    markdown_draft: Optional[str] = None
+    readme_context: str = ""
+    reference_path: str = "."
+    dependency_map: Optional[Dict[str, Any]] = None
+    diataxis_results: Dict[str, str] = Field(default_factory=dict)
+    judge_feedback: Optional[str] = None
+    user_context: Optional[str] = None
+    web_document: Optional[str] = None
+    web_document_html: Optional[str] = None
+    web_document_css: Optional[str] = None
+    writing_attempts: int = 0
+    final_document_approved: bool = False
+    has_graph: bool = False
+    output_language: str = "english"

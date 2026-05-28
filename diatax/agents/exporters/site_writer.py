@@ -1,16 +1,17 @@
 import markdown
 import re
+from pathlib import Path
 from typing import Tuple, Dict, Any, List
 from diatax.agents.base import BaseAgent
 from diatax.core.models import AgentResponse, WorkflowState
 
 class SiteWriter(BaseAgent):
     """
-    Agente SiteWriter: Generador de sitios web estáticos minimalistas y elegantes.
-    Nota: La implementación actual se centra en contenido textual y tipográfico; no incluye soporte para assets externos (imágenes, videos).
+    SiteWriter Agent: Generator of minimalist and elegant static websites.
+    Note: Current implementation focuses on textual and typographic content.
     """
-    nombre_agente = "SiteWriter"
-    rol = "Arquitecto de Interfaz Minimalista"
+    agent_name = "SiteWriter"
+    role = "Minimalist Interface Architect"
 
     def __init__(self, model: str, llm_service: Any):
         super().__init__(model)
@@ -18,108 +19,108 @@ class SiteWriter(BaseAgent):
 
     def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
         """
-        Orquesta la generación de los archivos index.html y style.css con soporte multimedia.
+        Orchestrates the generation of index.html and style.css files with multimedia support.
         """
         try:
-            from documentador.services.file_service import FileService
+            from diatax.services.file_service import FileService
             fs = FileService()
-            raiz = fs.encontrar_raiz_proyecto(state.ruta_referencia)
-            assets_dir = raiz / "documentator_result" / "assets"
+            root = fs.find_project_root(state.reference_path)
+            assets_dir = root / "diatax_result" / "assets"
             assets_dir.mkdir(parents=True, exist_ok=True)
 
-            # 0. Procesar Multimedia en cada cuadrante
-            if state.resultados_diataxis:
-                for tipo, md in state.resultados_diataxis.items():
-                    state.resultados_diataxis[tipo] = self._procesar_multimedia(md, raiz, assets_dir)
+            # 0. Process Multimedia in each quadrant
+            if state.diataxis_results:
+                for doc_type, md in state.diataxis_results.items():
+                    state.diataxis_results[doc_type] = self._process_multimedia(md, root, assets_dir)
 
-            # 1. Construir contenido HTML
+            # 1. Build HTML content
             html_content = self._build_html(state)
-            state.documento_web_html = html_content
+            state.web_document_html = html_content
             
-            # 2. Construir contenido CSS
+            # 2. Build CSS content
             css_content = self._build_css()
-            state.documento_web_css = css_content
+            state.web_document_css = css_content
 
-            return state, AgentResponse(status="success", data=html_content, message="Sitio minimalista premium generado con soporte de assets.")
+            return state, AgentResponse(status="success", data=html_content, message="Premium minimalist site generated with asset support.")
         except Exception as e:
-            return state, AgentResponse(status="error", data="", message=f"Error en generación de sitio: {str(e)}")
+            return state, AgentResponse(status="error", data="", message=f"Error in site generation: {str(e)}")
 
-    def _procesar_multimedia(self, md_content: str, raiz: Path, assets_dir: Path) -> str:
+    def _process_multimedia(self, md_content: str, root: Path, assets_dir: Path) -> str:
         """
-        Busca imágenes locales en el Markdown, las copia a assets/ y actualiza las rutas.
+        Searches for local images in Markdown, copies them to assets/ and updates paths.
         """
         from diatax.services.file_service import FileService
         fs = FileService()
         
-        # Encontrar patrones de imagen ![alt](ruta)
-        patron = r'!\[(.*?)\]\((.*?)\)'
+        # Find image patterns ![alt](path)
+        pattern = r'!\[(.*?)\]\((.*?)\)'
         
-        def reemplazar_ruta(match):
+        def replace_path(match):
             alt_text = match.group(1)
-            ruta_original = match.group(2)
+            original_path = match.group(2)
             
-            # Solo procesar rutas locales (no URL externas ni base64)
-            if ruta_original.startswith(("http://", "https://", "data:")):
+            # Only process local paths (no external URLs or base64)
+            if original_path.startswith(("http://", "https://", "data:")):
                 return match.group(0)
             
-            # Intentar resolver la ruta relativa al proyecto
-            ruta_absoluta = (raiz / ruta_original).resolve()
-            if ruta_absoluta.exists() and ruta_absoluta.is_file():
-                nueva_ruta = fs.copiar_asset(str(ruta_absoluta), assets_dir)
-                return f"![{alt_text}]({nueva_ruta})"
+            # Try to resolve path relative to project
+            absolute_path = (root / original_path).resolve()
+            if absolute_path.exists() and absolute_path.is_file():
+                new_path = fs.copy_asset(str(absolute_path), assets_dir)
+                return f"![{alt_text}]({new_path})"
             
             return match.group(0)
 
-        return re.sub(patron, reemplazar_ruta, md_content)
+        return re.sub(pattern, replace_path, md_content)
 
     def _build_html(self, state: WorkflowState) -> str:
-        # Generar navegación lateral izquierda (Secciones Globales)
-        nav_links = '<li><a href="#inicio" class="nav-link">Introducción</a></li>'
+        # Generate left sidebar navigation (Global Sections)
+        nav_links = '<li><a href="#start" class="nav-link">Introduction</a></li>'
         
-        # Generar Contenido Central (Artículos)
-        main_content = '<article id="inicio" class="page">'
+        # Generate Central Content (Articles)
+        main_content = '<article id="start" class="page">'
         
-        # Generar Navegación Derecha (Índice por bloque)
-        right_sidebar_content = '<div class="toc-group" id="toc-inicio"><p class="toc-title">EN ESTA PÁGINA</p><ul><li><a href="#inicio">Arriba</a></li></ul></div>'
+        # Generate Right Navigation (Table of Contents per block)
+        right_sidebar_content = '<div class="toc-group" id="toc-start"><p class="toc-title">ON THIS PAGE</p><ul><li><a href="#start">Top</a></li></ul></div>'
         
-        # Inicio / Metadata
-        meta = state.analisis_tecnico.get("metadata", {}) if state.analisis_tecnico else {}
-        summary = state.analisis_tecnico.get("summary", "Sin resumen disponible.") if state.analisis_tecnico else ""
+        # Metadata / Summary
+        meta = state.technical_analysis.get("metadata", {}) if state.technical_analysis else {}
+        summary = state.technical_analysis.get("summary", "No summary available.") if state.technical_analysis else ""
         
         main_content += f"""
             <header>
-                <p class="badge">PROYECTO</p>
-                <h1>Introducción</h1>
+                <p class="badge">PROJECT</p>
+                <h1>Introduction</h1>
                 <div class="metadata">
-                    <span><strong>Versión:</strong> {meta.get('version', '1.0.0')}</span>
-                    <span><strong>Autor:</strong> {meta.get('autor', 'Desconocido')}</span>
+                    <span><strong>Version:</strong> {meta.get('version', '1.0.0')}</span>
+                    <span><strong>Author:</strong> {meta.get('author', 'Unknown')}</span>
                 </div>
                 <p class="lead">{summary}</p>
             </header>
         </article>
         """
 
-        if state.resultados_diataxis:
-            for tipo, md in state.resultados_diataxis.items():
-                anchor_id = tipo.lower()
-                nav_links += f'<li><a href="#{anchor_id}" class="nav-link">{tipo.capitalize()}</a></li>'
+        if state.diataxis_results:
+            for doc_type, md in state.diataxis_results.items():
+                anchor_id = doc_type.lower()
+                nav_links += f'<li><a href="#{anchor_id}" class="nav-link">{doc_type.capitalize()}</a></li>'
                 
-                # Convertir MD a HTML
+                # Convert MD to HTML
                 html_snippet = markdown.markdown(md, extensions=['fenced_code', 'tables'])
                 
-                # Extraer encabezados de forma robusta e inyectar IDs únicos
-                local_toc = f'<div class="toc-group" id="toc-{anchor_id}"><p class="toc-title">EN ESTA PÁGINA</p><ul>'
+                # Robustly extract headers and inject unique IDs
+                local_toc = f'<div class="toc-group" id="toc-{anchor_id}"><p class="toc-title">ON THIS PAGE</p><ul>'
                 
                 def add_id(match):
                     level = match.group(1)
                     text = match.group(2)
-                    clean_id = f"{anchor_id}-{re.sub(r'[^a-zA-Z0-0]', '-', text.lower()).strip('-')}"
+                    clean_id = f"{anchor_id}-{re.sub(r'[^a-zA-Z0-9]', '-', text.lower()).strip('-')}"
                     return f'<h{level} id="{clean_id}">{text}</h{level}>'
 
-                # Reemplazar h2 y h3 con IDs únicos
+                # Replace h2 and h3 with unique IDs
                 html_snippet = re.sub(r'<h([2-3])>(.*?)</h[2-3]>', add_id, html_snippet)
                 
-                # Re-extraer para el TOC local
+                # Re-extract for local TOC
                 headers = re.findall(r'<h([2-3]) id="(.*?)">(.*?)</h[2-3]>', html_snippet)
                 for level, hid, text in headers:
                     indent = "margin-left: 1rem;" if level == "3" else ""
@@ -130,25 +131,25 @@ class SiteWriter(BaseAgent):
 
                 main_content += f"""
                 <article id="{anchor_id}" class="page">
-                    <p class="badge">{tipo.upper()}</p>
+                    <p class="badge">{doc_type.upper()}</p>
                     <div class="markdown-body">
                         {html_snippet}
                     </div>
                 </article>
                 """
 
-        return f"""<!-- Este es el archivo estructural. La apariencia visual y los colores (blanco, negro, dorado) se controlan completamente desde el archivo style.css -->
+        return f"""<!-- This is the structural file. Appearance is controlled from style.css -->
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentación Técnica - Premium</title>
+    <title>Technical Documentation - Premium</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="layout">
-        <!-- Columna 1: Navegación Global -->
+        <!-- Column 1: Global Navigation -->
         <aside class="sidebar-left">
             <nav class="global-nav">
                 <div class="brand">DIATAX</div>
@@ -158,15 +159,15 @@ class SiteWriter(BaseAgent):
             </nav>
         </aside>
 
-        <!-- Columna 2: Contenido Principal -->
+        <!-- Column 2: Main Content -->
         <main class="content">
             {main_content}
             <footer>
-                <p>Documentación generada por Diatax</p>
+                <p>Documentation generated by Diatax</p>
             </footer>
         </main>
 
-        <!-- Columna 3: Índice por bloque (Derecha) -->
+        <!-- Column 3: Local Index (Right) -->
         <aside class="sidebar-right">
             <nav class="local-nav">
                 {right_sidebar_content}
@@ -177,14 +178,14 @@ class SiteWriter(BaseAgent):
 </html>"""
 
     def _build_css(self) -> str:
-        return """/* ARCHIVO DE ESTILOS: Modifica las variables en :root para cambiar los colores, tipografía y medidas de la página directamente. */
+        return """/* STYLE FILE: Modify variables in :root to change colors, typography and measurements directly. */
 :root {
-  --ink: #111111; /* Negro para texto */
-  --paper: #ffffff; /* Blanco para fondo */
-  --accent: #d4af37; /* Dorado elegante para acentos, títulos y enlaces */
-  --rule: #e5e5e5; /* Gris muy claro para bordes divisores */
-  --terminal-bg: #0f1419; /* Fondo tipo consola moderna */
-  --terminal-bar: #1e242e; /* Barra superior de consola */
+  --ink: #111111; /* Black for text */
+  --paper: #ffffff; /* White for background */
+  --accent: #d4af37; /* Elegant gold for accents, titles and links */
+  --rule: #e5e5e5; /* Very light gray for dividers */
+  --terminal-bg: #0f1419; /* Modern console background */
+  --terminal-bar: #1e242e; /* Top console bar */
   --measure: 65ch;
   --serif: ui-serif, Georgia, serif;
   --sans: ui-sans-serif, system-ui, sans-serif;
@@ -216,22 +217,21 @@ body {
   min-height: 100vh;
 }
 
-/* --- LÓGICA DE PÁGINAS OCULTAS (ZERO JS) --- */
-/* Nota: Al usar :target, el estado de la 'página' activa se pierde si se recarga el sitio sin el hash en la URL. */
+/* --- HIDDEN PAGES LOGIC (ZERO JS) --- */
 .page { display: none; animation: fadeIn 0.4s ease; }
 
-/* Mostrar #inicio por defecto si no hay target */
-#inicio { display: block; }
+/* Show #start by default if no target */
+#start { display: block; }
 
-/* Si hay un target, ocultar #inicio (a menos que él mismo sea el target) */
-body:has(.page:target):not(:has(#inicio:target)) #inicio { display: none; }
+/* If target exists, hide #start (unless it's the target) */
+body:has(.page:target):not(:has(#start:target)) #start { display: none; }
 
-/* Mostrar la página que es el target actual */
+/* Show current target page */
 .page:target { display: block; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- SIDEBAR IZQUIERDA (Global Nav) --- */
+/* --- LEFT SIDEBAR (Global Nav) --- */
 .sidebar-left { padding-top: 4rem; }
 .global-nav { position: sticky; top: 4rem; }
 .brand { font-weight: 900; letter-spacing: 0.15em; margin-bottom: 3rem; color: var(--accent); font-size: 0.75rem; border-left: 2px solid var(--accent); padding-left: 1rem; }
@@ -249,10 +249,7 @@ body:has(.page:target):not(:has(#inicio:target)) #inicio { display: none; }
 }
 .global-nav a:hover { color: var(--accent); padding-left: 0.5rem; }
 
-/* Estilo para el link activo basado en el hash (limitado pero funcional) */
-/* Nota: Al usar cero JS, no podemos mantener resaltado el botón global cuando se navega por sus sub-secciones. Dependemos del :hover para feedback visual. */
-
-/* --- CONTENIDO CENTRAL --- */
+/* --- MAIN CONTENT --- */
 .content { padding: 4rem 0; }
 h1, h2, h3 { font-family: var(--serif); color: var(--ink); line-height: 1.2; margin-top: 3rem; }
 h1 { font-size: clamp(2.5rem, 5vw, 3.5rem); margin-top: 0; margin-bottom: 2rem; border-bottom: 2px solid var(--rule); padding-bottom: 1rem; }
@@ -263,7 +260,7 @@ h3 { font-size: 1.3rem; }
 .lead { font-size: 1.2rem; color: #444; font-style: italic; margin-bottom: 3rem; }
 .metadata { display: flex; gap: 2rem; margin-bottom: 2.5rem; font-size: 0.85rem; color: #888; border-bottom: 1px solid var(--rule); padding-bottom: 1.5rem; }
 
-/* --- SIDEBAR DERECHA (Local TOC) --- */
+/* --- RIGHT SIDEBAR (Local TOC) --- */
 .sidebar-right { padding-top: 4rem; }
 .local-nav { position: sticky; top: 4rem; border-left: 1px solid var(--rule); padding-left: 1.5rem; }
 .toc-title { font-size: 0.65rem; font-weight: 900; color: #aaa; letter-spacing: 0.1em; margin-bottom: 1.5rem; text-transform: uppercase; }
@@ -274,16 +271,16 @@ h3 { font-size: 1.3rem; }
 .toc-group a { text-decoration: none; color: #777; font-size: 0.8rem; transition: color 0.2s; display: block; }
 .toc-group a:hover { color: var(--accent); }
 
-/* Resaltado del TOC local dinámico */
-body:has(#inicio:target) #toc-inicio, 
-body:not(:has(.page:target)) #toc-inicio { display: block; }
+/* Dynamic local TOC highlight */
+body:has(#start:target) #toc-start, 
+body:not(:has(.page:target)) #toc-start { display: block; }
 
 body:has(#reference:target) #toc-reference { display: block; }
 body:has(#howto:target) #toc-howto { display: block; }
 body:has(#tutorial:target) #toc-tutorial { display: block; }
 body:has(#explanation:target) #toc-explanation { display: block; }
 
-/* --- BLOQUES DE CÓDIGO (TERMINAL REALISTA) --- */
+/* --- CODE BLOCKS (REALISTIC TERMINAL) --- */
 pre {
     background-color: var(--terminal-bg);
     color: #d1d1d1;
@@ -299,7 +296,6 @@ pre {
     border: 1px solid #2d333b;
 }
 
-/* Efecto de barra de terminal */
 pre::before {
     content: "● ● ●";
     display: block;
@@ -307,7 +303,7 @@ pre::before {
     background: var(--terminal-bar);
     margin: -1.5rem -1.5rem 1rem -1.5rem;
     padding: 0 1rem;
-    color: #ff5f56; /* El primer punto rojo */
+    color: #ff5f56;
     font-size: 10px;
     line-height: 24px;
     letter-spacing: 2px;
@@ -318,7 +314,7 @@ pre::before {
 code { font-family: var(--mono); background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.9em; color: #c51d1d; }
 pre code { background: transparent; padding: 0; color: inherit; }
 
-/* --- TABLAS Y OTROS --- */
+/* --- TABLES AND OTHERS --- */
 table { width: 100%; border-collapse: collapse; margin: 2.5rem 0; font-size: 0.9rem; }
 th, td { text-align: left; padding: 1rem; border-bottom: 1px solid var(--rule); }
 th { color: var(--accent); font-family: var(--serif); font-weight: 700; }
@@ -330,6 +326,6 @@ footer { margin-top: 10rem; padding-top: 2rem; border-top: 1px solid var(--rule)
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; padding: 0 2rem; }
   .sidebar-left, .sidebar-right { display: none; }
-  .page { display: block !important; margin-bottom: 6rem; } /* En móvil mostramos todo en cascada */
+  .page { display: block !important; margin-bottom: 6rem; }
 }
-"""""
+"""

@@ -1,19 +1,23 @@
 class LLMError(Exception):
-    """Excepción base para errores relacionados con el LLM."""
+    """Base exception for LLM-related errors."""
     pass
 
 class LLMAuthenticationError(LLMError):
-    """Error cuando las credenciales del proveedor son inválidas."""
+    """Error when provider credentials are invalid."""
     pass
 
 class LLMRateLimitError(LLMError):
-    """Error cuando se alcanza el límite de peticiones del proveedor."""
+    """Error when provider request limit is reached."""
     pass
 
 class LLMNetworkError(LLMError):
-    """Error de conexión o timeout con el proveedor de IA."""
+    """Connection or timeout error with the AI provider."""
     pass
 
 class LLMConfigError(LLMError):
-    """Error cuando la configuración local es inexistente o inválida."""
+    """Error when local configuration is missing or invalid."""
+    pass
+
+class LLMFormatError(LLMError):
+    """Error when the LLM response format is invalid or cannot be parsed."""
     pass

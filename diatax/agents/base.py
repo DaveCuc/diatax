@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
-from diatax.core.models import AgentResponse, WorkflowState
+from typing import Tuple, Any
+from diatax.core.models import WorkflowState, AgentResponse
 
 class BaseAgent(ABC):
     """
-    Clase abstracta que define el contrato obligatorio para todos los agentes.
-    Incluye metadatos de identidad y operación sobre la Pizarra (WorkflowState).
+    Abstract base class for all agents.
+    Provides a common interface for the multi-agent system.
     """
-    nombre_agente: str
-    rol: str
+    agent_name: str = "BaseAgent"
+    role: str = "General Assistant"
 
     def __init__(self, model: str):
         self.model = model
@@ -16,7 +16,7 @@ class BaseAgent(ABC):
     @abstractmethod
     def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
         """
-        Método principal que opera sobre la Pizarra.
-        Recibe el estado actual, lo modifica y devuelve el estado actualizado junto con una respuesta.
+        Main logic of the agent. Receives the shared state and returns 
+        the updated state and a standard response.
         """
         pass

@@ -1,63 +1,74 @@
-from typing import Tuple
+from typing import Tuple, Dict, Any
 from diatax.agents.base import BaseAgent
 from diatax.core.models import AgentResponse, WorkflowState
 from diatax.services.llm_service import LLMService
 from diatax.core.exceptions import LLMError
-import json
 
-class DiataxisJudge(BaseAgent):
-    """Clase base para jueces Diátaxis."""
+class BaseJudge(BaseAgent):
+    """
+    Base class for Diátaxis Judges.
+    """
     def __init__(self, model: str, llm_service: LLMService):
         super().__init__(model)
         self.llm_service = llm_service
 
-    def _execute_judging(self, state: WorkflowState, quadrant: str, rules: str) -> Tuple[WorkflowState, AgentResponse]:
-        if not state.borrador_markdown:
-            return state, AgentResponse(status="error", data={}, message="No hay borrador para evaluar.")
-
-        system_prompt = (
-            f"Eres un Editor Senior experto en Diátaxis, encargado de validar el cuadrante: {quadrant}. "
-            f"Reglas estrictas de validación: {rules}. "
-            "Debes retornar OBLIGATORIAMENTE un JSON con: "
-            "'aprobado' (bool), 'feedback' (str) y 'puntos_mejora' (lista)."
-        )
-
-        user_prompt = f"Evalúa este borrador Markdown:\n\n{state.borrador_markdown}"
-
+    def _execute_judging(self, state: WorkflowState, criteria: str) -> Tuple[WorkflowState, AgentResponse]:
         try:
-            evaluacion = self.llm_service.enviar_peticion(system_prompt, user_prompt, json_schema={"type": "object"})
+            if not state.markdown_draft:
+                return state, AgentResponse(status="error", data={}, message="No markdown draft to judge.")
+
+            system_prompt = (
+                f"You are a quality judge for technical documentation. "
+                f"Evaluate if the following document meets these criteria:\n{criteria}\n\n"
+                "Return a JSON with: 'approved' (boolean), 'feedback' (string), "
+                "and 'improvements' (list of strings)."
+            )
             
-            if evaluacion.get("aprobado"):
-                state.documento_final_aprobado = True
-                state.feedback_juez = None
-                return state, AgentResponse(status="success", data=evaluacion, message=f"Documentación de {quadrant} aprobada.")
-            else:
-                state.feedback_juez = evaluacion.get("feedback")
-                state.documento_final_aprobado = False
-                return state, AgentResponse(status="success", data=evaluacion, message=f"Documentación de {quadrant} requiere mejoras.")
+            user_prompt = f"Evaluate this document:\n\n{state.markdown_draft}"
+
+            evaluation = self.llm_service.send_request(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                model=self.model,
+                schema={"type": "object"}
+            )
+
+            state.final_document_approved = evaluation.get("approved", False)
+            state.judge_feedback = evaluation.get("feedback", "")
+            
+            return state, AgentResponse(status="success", data=evaluation, message="Judging completed.")
+
         except LLMError as e:
             return state, AgentResponse(status="error", data={}, message=str(e))
 
-class TutorialJudge(DiataxisJudge):
-    nombre_agente = "TutorialJudge"
-    rol = "Juez de Tutoriales"
-    def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
-        return self._execute_judging(state, "Tutoriales", "Debe ser orientado al aprendizaje, paso a paso, sin asumir conocimientos previos profundos.")
+class ReferenceJudge(BaseJudge):
+    agent_name = "ReferenceJudge"
+    role = "Technical Accuracy Auditor"
 
-class HowToJudge(DiataxisJudge):
-    nombre_agente = "HowToJudge"
-    rol = "Juez de Guías (How-to)"
     def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
-        return self._execute_judging(state, "Guías (How-to)", "Debe resolver un problema concreto, ser directo y orientado a la acción.")
+        criteria = "Must be objective, precise, and contain all technical details without tutorials or guides."
+        return self._execute_judging(state, criteria)
 
-class ReferenceJudge(DiataxisJudge):
-    nombre_agente = "ReferenceJudge"
-    rol = "Juez de Referencia"
-    def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
-        return self._execute_judging(state, "Referencia", "Debe ser técnico, neutral, completo y estrictamente informativo.")
+class HowToJudge(BaseJudge):
+    agent_name = "HowToJudge"
+    role = "Practicality Auditor"
 
-class ExplanationJudge(DiataxisJudge):
-    nombre_agente = "ExplanationJudge"
-    rol = "Juez de Explicación"
     def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
-        return self._execute_judging(state, "Explicación", "Debe profundizar en el 'por qué', dar contexto y facilitar la comprensión teórica.")
+        criteria = "Must be a sequence of steps to solve a specific problem. No theory, just action."
+        return self._execute_judging(state, criteria)
+
+class TutorialJudge(BaseJudge):
+    agent_name = "TutorialJudge"
+    role = "Learning Experience Auditor"
+
+    def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
+        criteria = "Must be educational, easy to follow for a beginner, and provide a successful first experience."
+        return self._execute_judging(state, criteria)
+
+class ExplanationJudge(BaseJudge):
+    agent_name = "ExplanationJudge"
+    role = "Conceptual Clarity Auditor"
+
+    def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
+        criteria = "Must provide context, background, and deep understanding of 'why', not just 'how'."
+        return self._execute_judging(state, criteria)

@@ -1,17 +1,15 @@
-from typing import Tuple
-import json
+from typing import Tuple, Any
 from diatax.agents.base import BaseAgent
 from diatax.core.models import AgentResponse, WorkflowState
 from diatax.services.llm_service import LLMService
-from diatax.core.exceptions import LLMError
 
 class RiskAgent(BaseAgent):
     """
-    Agente de Riesgos: Auditor de ciberseguridad experto.
-    Analiza el código en busca de vulnerabilidades y fallas de seguridad.
+    Risk Agent: Performs SAST (Static Application Security Testing) 
+    to find common vulnerabilities in source code.
     """
-    nombre_agente = "RiskAgent"
-    rol = "Auditor de Seguridad (DevSecOps)"
+    agent_name = "RiskAgent"
+    role = "Cybersecurity Auditor"
 
     def __init__(self, model: str, llm_service: LLMService):
         super().__init__(model)
@@ -19,50 +17,31 @@ class RiskAgent(BaseAgent):
 
     def execute(self, state: WorkflowState) -> Tuple[WorkflowState, AgentResponse]:
         """
-        Analiza el código crudo en busca de riesgos de seguridad.
+        Analyzes code to detect security risks.
         """
-        if not state.codigo_crudo:
-            return state, AgentResponse(
-                status="error",
-                data={},
-                message="No hay código fuente en el estado para auditar."
-            )
-
-        system_prompt = (
-            "DIRECTIVA DE SEGURIDAD: Eres un auditor de ciberseguridad experto (DevSecOps). "
-            "Tu tarea es analizar el código fuente proporcionado e identificar exclusivamente "
-            "riesgos de seguridad, vulnerabilidades (OWASP Top 10), malas prácticas de manejo de memoria, "
-            "o exposición de datos sensibles. No documentes qué hace el código, solo busca fallas.\n\n"
-            "Debes retornar OBLIGATORIAMENTE un objeto JSON con la siguiente estructura:\n"
-            "{\n"
-            "  \"riesgos_encontrados\": [\n"
-            "    {\n"
-            "      \"gravedad\": \"Alta/Media/Baja\",\n"
-            "      \"descripcion\": \"...\",\n"
-            "      \"linea_o_funcion\": \"...\",\n"
-            "      \"solucion_sugerida\": \"...\"\n"
-            "    }\n"
-            "  ]\n"
-            "}"
-        )
-
-        user_prompt = f"Realiza una auditoría de seguridad del siguiente código:\n\n{state.codigo_crudo}"
-
         try:
-            audit_result = self.llm_service.enviar_peticion(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                json_schema={"type": "object"}
+            if not state.raw_code:
+                return state, AgentResponse(status="error", data={}, message="No source code in state to audit.")
+
+            system_prompt = (
+                "You are a cybersecurity expert. Perform a security audit (SAST) "
+                "on the following code. Identify vulnerabilities such as injections, "
+                "path traversal, sensitive data exposure, etc. Return a JSON object with "
+                "a key 'found_risks' which is a list of objects, each containing: "
+                "'severity' (High, Medium, Low), 'location' (line or function), "
+                "'description', and 'suggested_solution'."
             )
             
-            # Si la IA devuelve algo mal estructurado, el LLMService ya aplica resiliencia básica.
-            return state, AgentResponse(
-                status="success",
-                data=audit_result,
-                message="Auditoría de seguridad completada."
+            user_prompt = f"Perform a security audit on the following code:\n\n{state.raw_code}"
+
+            audit_result = self.llm_service.send_request(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                model=self.model,
+                schema={"type": "object"}
             )
 
-        except LLMError as e:
-            return state, AgentResponse(status="error", data={}, message=str(e))
+            return state, AgentResponse(status="success", data=audit_result, message="Security audit completed.")
+
         except Exception as e:
-            return state, AgentResponse(status="error", data={}, message=f"Error inesperado en RiskAgent: {str(e)}")
+            return state, AgentResponse(status="error", data={}, message=f"Unexpected error in RiskAgent: {str(e)}")
