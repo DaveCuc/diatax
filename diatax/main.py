@@ -132,8 +132,11 @@ def orchestrate_cycle(state: WorkflowState, doc_type: DocType, model: str, llm: 
 @app.command()
 def update(path: str = typer.Argument(".", help="Path to update")):
     """Updates documentation incrementally for the entire project."""
+    target_path = os.getcwd() if path == "." else os.path.abspath(path)
+    engine_path = os.path.dirname(os.path.abspath(__file__))
+    
     file_service = FileService()
-    files = file_service.get_python_files(path)
+    files = file_service.get_python_files(target_path)
     
     with console.status("[bold green]⚡ Checking for changes...", spinner="dots") as status:
         cache = file_service.read_cache()
@@ -147,7 +150,7 @@ def update(path: str = typer.Argument(".", help="Path to update")):
         
         if project_changed:
             status.update("[bold blue]ℹ Changes detected. Updating holistic documentation...")
-            run_generation_flow(path, DocType.all, status, auto_mode=True)
+            run_generation_flow(target_path, DocType.all, status, auto_mode=True)
             file_service.save_cache(cache)
             status.stop()
             console.print("[bold green]✅ Update completed successfully.")
@@ -162,11 +165,15 @@ def generar(
     auto: bool = typer.Option(False, "--auto")
 ):
     """Rule 4: Master Generation. Processes project context ONCE."""
+    target_path = os.getcwd() if path == "." else os.path.abspath(path)
+    engine_path = os.path.dirname(os.path.abspath(__file__))
+    
     with console.status("[bold green]⚡ Iniciando generación maestra...", spinner="dots") as status:
-        run_generation_flow(path, doc_type, status, auto_mode=auto)
+        run_generation_flow(target_path, doc_type, status, auto_mode=auto)
 
 def run_generation_flow(path: str, doc_type: DocType, status, auto_mode: bool = False):
     """Rule 3: Aggregated Context Router & Single Session Orchestration."""
+    # Note: engine_path can be used here if config.json or system prompts are needed from the package
     config_data = load_config()
     if not config_data:
         status.stop(); console.print(Panel("[red]Error: Configura primero.[/red]", border_style="red")); raise typer.Exit(1)

@@ -17,23 +17,12 @@ class FileService:
 
     def check_graph_context(self, reference_path: str) -> Dict[str, Any]:
         """
-        Looks for Graphify context (graphify_result.json) before starting.
+        Looks for Graphify context (graphify_result.json) strictly in the target path.
         Phase 1: Pre-flight (Silent Detection).
         """
         path = Path(reference_path)
         directory = path if path.is_dir() else path.parent
         graphify_file = directory / "graphify_result.json"
-        
-        # Also search in parent folders in case the user is in a subfolder
-        current = directory
-        while True:
-            possible_file = current / "graphify_result.json"
-            if possible_file.exists():
-                graphify_file = possible_file
-                break
-            if current.parent == current: 
-                break
-            current = current.parent
 
         if graphify_file.exists():
             try:
@@ -164,7 +153,9 @@ class FileService:
         return start_dir
 
     def read_local_readme(self, reference_path: str) -> str:
-        root = self.find_project_root(reference_path)
+        """Reads README.md strictly from the target path."""
+        path = Path(reference_path)
+        root = path if path.is_dir() else path.parent
         for name in ["README.md", "readme.md", "README.MD"]:
             readme_path = root / name
             if readme_path.exists():
@@ -173,8 +164,9 @@ class FileService:
         return ""
 
     def export_results(self, state: WorkflowState, md_results: Dict[str, str], reference_path: str = "."):
-        """Exports consolidated project-wide documentation."""
-        root = self.find_project_root(reference_path)
+        """Exports consolidated project-wide documentation strictly to target_path/diatax_result."""
+        path = Path(reference_path)
+        root = path if path.is_dir() else path.parent
         output_dir = root / "diatax_result"
         output_dir.mkdir(exist_ok=True)
 
