@@ -45,7 +45,7 @@ python -m diatax.main update .
 | Requirement | Minimum | Check | Install |
 |---|---|---|---|
 | Python | 3.10+ | `python --version` | [python.org](https://www.python.org/downloads/) |
-| Git (Optional) | any | `git --version` | Required for automatic root detection fallback |
+| Git | any | `git --version` | Required for automatic root detection fallback |
 
 ---
 
